@@ -14,49 +14,58 @@
  */
 package sk.freemap.gpxAnimator;
 
+import org.jetbrains.annotations.NonNls;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sk.freemap.gpxAnimator.ui.MainFrame;
+
 import java.awt.EventQueue;
 import java.awt.GraphicsEnvironment;
 
-import sk.freemap.gpxAnimator.ui.MainFrame;
 
+public final class Main {
 
-public class Main {
+    @NonNls
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-	public static void main(final String[] args) {
-		try {
-			final CommandLineConfigurationFactory cf = new CommandLineConfigurationFactory(args);
-			final Configuration configuration = cf.getConfiguration();
-			
-			if (cf.isGui() && !GraphicsEnvironment.isHeadless()) {
-				EventQueue.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							final MainFrame frame = new MainFrame();
-							frame.setVisible(true);
-							frame.setConfiguration(configuration);
-						} catch (final Exception e) {
-							e.printStackTrace();
-						}
-					}
-				});
-			} else {
-				new Renderer(configuration).render(new RenderingContext() {
-					@Override
-					public void setProgress1(final int pct, final String message) {
-						System.out.printf("%03d%% %s\n", pct, message);
-					}
+    private Main() throws InstantiationException {
+        throw new InstantiationException("This is the main class and can't be instantiated!");
+    }
 
-					@Override
-					public boolean isCancelled1() {
-						return false;
-					}
-				});
-			}
-		} catch (final UserException e) {
-			System.err.println(e.getMessage());
-			System.exit(1);
-		}
-	}
+    public static void main(final String[] args) {
+        try {
+            final CommandLineConfigurationFactory cf = new CommandLineConfigurationFactory(args);
+            final Configuration configuration = cf.getConfiguration();
+
+            new Thread(TileCache::ageCache).start();
+
+            if (cf.isGui() && !GraphicsEnvironment.isHeadless()) {
+                EventQueue.invokeLater(() -> {
+                    try {
+                        final MainFrame frame = new MainFrame();
+                        frame.setVisible(true);
+                        frame.setConfiguration(configuration);
+                    } catch (final Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            } else {
+                new Renderer(configuration).render(new RenderingContext() {
+                    @Override
+                    public void setProgress1(final int pct, final String message) {
+                        LOGGER.info("{}% {}", pct, message);
+                    }
+
+                    @Override
+                    public boolean isCancelled1() {
+                        return false;
+                    }
+                });
+            }
+        } catch (final UserException e) {
+            LOGGER.error("Very bad, exception caught in main method!", e);
+            System.exit(1); // NOPMD -- We can't recover here
+        }
+    }
 
 }

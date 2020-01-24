@@ -4,28 +4,22 @@ import java.awt.geom.Point2D;
 
 class GpxPoint extends Point2D.Double {
 
-    private static final long serialVersionUID = -1060001559630478467L;
-    
-    private LatLon latLon;
-    private double time;
-    private double speed;
+    private static final long serialVersionUID = -1060001559230478467L;
 
-    GpxPoint(final double x, final double y, final LatLon latLon, final double time, final double speed) {
+    private final LatLon latLon;
+    private final long time;
+
+    GpxPoint(final double x, final double y, final LatLon latLon, final long time) {
         super(x, y);
         this.latLon = latLon;
         this.time = time;
-        this.speed = speed;
     }
 
     LatLon getLatLon() {
         return latLon;
     }
 
-    double getTime() {
+    long getTime() {
         return time;
-    }
-
-    double getSpeed() {
-        return speed;
     }
 }

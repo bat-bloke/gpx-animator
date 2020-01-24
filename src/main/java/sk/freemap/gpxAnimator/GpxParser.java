@@ -14,6 +14,11 @@
  */
 package sk.freemap.gpxAnimator;
 
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -21,51 +26,42 @@ import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.util.zip.GZIPInputStream;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
+public final class GpxParser {
 
-import org.xml.sax.SAXException;
+    private GpxParser() throws InstantiationException {
+        throw new InstantiationException("GpxParser is a utility class and can't be instantiated!");
+    }
 
-class GpxParser {
+    static void parseGpx(final File inputGpx, final GpxContentHandler dh) throws UserException {
+        final SAXParser saxParser;
+        try {
+            saxParser = SAXParserFactory.newInstance().newSAXParser();
+        } catch (final ParserConfigurationException | SAXException e) {
+            throw new RuntimeException("can't create XML parser", e);
+        }
 
-	static void parseGpx(final File inputGpx, final GpxContentHandler dh) throws UserException {
-		final SAXParser saxParser;
-		try {
-			saxParser = SAXParserFactory.newInstance().newSAXParser();
-		} catch (final ParserConfigurationException e) {
-			throw new RuntimeException("can't create XML parser", e);
-		} catch (final SAXException e) {
-			throw new RuntimeException("can't create XML parser", e);
-		}
-		
-		try {
-			final InputStream is = new FileInputStream(inputGpx);
-			try {
-				final InputStream dis = decompressStream(is);
-				try {
-					saxParser.parse(dis, dh);
-				} catch (final SAXException e) {
-					throw new UserException("error parsing input GPX file", e);
-				} catch (final RuntimeException e) {
-					throw new RuntimeException("internal error when parsing GPX file", e);
-				} finally {
-					dis.close();
-				}
-			} finally {
-				is.close();
-			}
-		} catch (final IOException e) {
-			throw new UserException("error reading input file", e);
-		}
-	}
-	
-	public static InputStream decompressStream(final InputStream input) throws IOException {
-		final PushbackInputStream pb = new PushbackInputStream(input, 2);
-		final byte[] signature = new byte[2];
-		pb.read(signature);
-		pb.unread(signature);
-		return signature[0] == (byte) 0x1f && signature[1] == (byte) 0x8b ? new GZIPInputStream(pb) : pb;
-	}
+        try {
+            try (InputStream is = new FileInputStream(inputGpx)) {
+                try (InputStream dis = decompressStream(is)) {
+                    saxParser.parse(dis, dh);
+                } catch (final SAXException e) {
+                    throw new UserException("error parsing input GPX file", e);
+                } catch (final RuntimeException e) {
+                    throw new RuntimeException("internal error when parsing GPX file", e);
+                }
+            }
+        } catch (final IOException e) {
+            throw new UserException("error reading input file", e);
+        }
+    }
+
+    @SuppressWarnings("PMD.CloseResource") // The returned stream will be used and closed in a try-with-resources block
+    public static InputStream decompressStream(final InputStream input) throws IOException {
+        final PushbackInputStream pb = new PushbackInputStream(input, 2);
+        final byte[] signature = new byte[2];
+        final int numBytesRead = pb.read(signature);
+        pb.unread(signature, 0, numBytesRead);
+        return signature[0] == (byte) 0x1f && signature[1] == (byte) 0x8b ? new GZIPInputStream(pb) : pb;
+    }
 
 }

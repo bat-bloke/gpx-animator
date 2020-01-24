@@ -14,43 +14,55 @@
  */
 package sk.freemap.gpxAnimator.frameWriter;
 
+import org.jetbrains.annotations.NonNls;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sk.freemap.gpxAnimator.Preferences;
+import sk.freemap.gpxAnimator.UserException;
+
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ResourceBundle;
 
-import javax.imageio.ImageIO;
+import static sk.freemap.gpxAnimator.Utils.isEqual;
 
-import sk.freemap.gpxAnimator.UserException;
-
+@SuppressWarnings("PMD.BeanMembersShouldSerialize") // This class is not serializable
 public final class FileFrameWriter implements FrameWriter {
-	private final String frameFilePattern;
-	private final String imageType;
-	private int frame;
-	private final double fps;
 
-	public FileFrameWriter(final String frameFilePattern, final String imageType, final double fps) throws UserException {
-		if (String.format(frameFilePattern, 100).equals(String.format(frameFilePattern, 200))) {
-			throw new UserException("output must be pattern, for example frame%08d.png");
-		}
+    @NonNls
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileFrameWriter.class);
 
-		this.frameFilePattern = frameFilePattern;
-		this.imageType = imageType;
-		this.fps = fps;
-	}
+    private final String frameFilePattern;
+    private final String imageType;
+    private final double fps;
+    private int frame;
 
-	@Override
-	public void addFrame(final BufferedImage bi) throws UserException {
-		final File outputfile = new File(String.format(frameFilePattern, ++frame));
-	    try {
-			ImageIO.write(bi, imageType, outputfile);
-		} catch (final IOException e) {
-			throw new UserException("error writing frame to " + outputfile, e);
-		}
-	}
+    public FileFrameWriter(final String frameFilePattern, final String imageType, final double fps) throws UserException {
+        if (!isEqual(String.format(frameFilePattern, 100), String.format(frameFilePattern, 200))) {
+            final ResourceBundle resourceBundle = Preferences.getResourceBundle();
+            throw new UserException(resourceBundle.getString("framewriter.error.outputpattern"));
+        }
 
-	@Override
-	public void close() {
-		System.out.println("To encode generated frames you may run this command:");
-		System.out.println("ffmpeg -i " + frameFilePattern + " -vcodec mpeg4 -b 3000k -r " + fps + " video.avi");
-	}
+        this.frameFilePattern = frameFilePattern;
+        this.imageType = imageType;
+        this.fps = fps;
+    }
+
+    @Override
+    public void addFrame(final BufferedImage bi) throws UserException {
+        final File outputfile = new File(String.format(frameFilePattern, ++frame));
+        try {
+            ImageIO.write(bi, imageType, outputfile);
+        } catch (final IOException e) {
+            throw new UserException(String.format("error writing frame to '%s'", outputfile), e);
+        }
+    }
+
+    @Override
+    public void close() {
+        LOGGER.info("To encode generated frames you may run this command:");
+        LOGGER.info("ffmpeg -i {} -vcodec mpeg4 -b 3000k -r {} video.avi", frameFilePattern, fps); //NON-NLS
+    }
 }

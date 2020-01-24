@@ -14,20 +14,20 @@
  */
 package sk.freemap.gpxAnimator;
 
-import java.awt.Color;
-
 import javax.xml.bind.annotation.adapters.XmlAdapter;
+import java.awt.Color;
+import java.util.Locale;
 
-public class ColorXmlAdapter extends XmlAdapter<String, Color> {
+public final class ColorXmlAdapter extends XmlAdapter<String, Color> {
 
-	@Override
-	public Color unmarshal(final String string) throws Exception {
-		return new Color(Long.decode(string).intValue(), true);
-	}
+    @Override
+    public Color unmarshal(final String string) {
+        return new Color(Long.decode(string).intValue(), true);
+    }
 
-	@Override
-	public String marshal(final Color color) throws Exception {
-		return "#" + Integer.toHexString(color.getRGB()).toUpperCase();
-	}
+    @Override
+    public String marshal(final Color color) {
+        return "#".concat(Integer.toHexString(color.getRGB()).toUpperCase(Locale.getDefault()));
+    }
 
 }

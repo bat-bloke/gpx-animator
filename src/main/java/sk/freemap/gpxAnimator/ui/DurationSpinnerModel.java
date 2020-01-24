@@ -14,102 +14,95 @@
  */
 package sk.freemap.gpxAnimator.ui;
 
+import org.jetbrains.annotations.NonNls;
+
 import javax.swing.AbstractSpinnerModel;
 import java.util.Objects;
 
-public class DurationSpinnerModel extends AbstractSpinnerModel {
+public final class DurationSpinnerModel extends AbstractSpinnerModel {
 
-	private static final long serialVersionUID = 7220186634453532297L;
-	
-	private Long duration;
-	
-	
-	public enum Field {
-		MILLISECOND("ms"),
-		SECOND("s"),
-		MINUTE("m"),
-		HOUR("h"),
-		DAY("d");
-		
-		private final String unit;
+    private static final long serialVersionUID = 7220186634453532297L;
 
-		private Field(final String unit) {
-			this.unit = unit;
-		}
-		
-		public String getUnit() {
-			return unit;
-		}
-		
-		public static Field fromUnit(final String unit) {
-			for (final Field field : Field.values()) {
-				if (field.getUnit().equals(unit)) {
-					return field;
-				}
-			}
-			return null;
-		}
-	}
-	
-	
-	private Field field = Field.SECOND;
-	
-	
-	@Override
-	public Object getValue() {
-		return duration;
-	}
-	
+    private transient Long duration;
+    private Field field = Field.SECOND;
 
-	@Override
-	public void setValue(final Object value) {
-		if (!Objects.equals(duration, value)) {
-			duration = (Long) value;
-			fireStateChanged();
-		}
-	}
-	
+    @Override
+    public Object getValue() {
+        return duration;
+    }
 
-	@Override
-	public Object getNextValue() {
-		return (duration == null ? 0 : duration) + getDiffMs();
-	}
-	
+    @Override
+    public void setValue(final Object value) {
+        if (!Objects.equals(duration, value)) {
+            duration = (Long) value;
+            fireStateChanged();
+        }
+    }
 
-	@Override
-	public Object getPreviousValue() {
-		final long prev = (duration == null ? 0 : duration) - getDiffMs();
-		return prev;
-	}
-	
-	
-	public void setField(final Field field) {
-		this.field = field;
-	}
-	
-	
-	public Field getField() {
-		return field;
-	}
-	
+    @Override
+    public Object getNextValue() {
+        return (duration == null ? 0 : duration) + getDiffMs();
+    }
 
-	private long getDiffMs() {
-		long add = 1;
-		switch (field) {
-		case DAY:
-			add *= 24;
-		case HOUR:
-			add *= 60;
-		case MINUTE:
-			add *= 60;
-		case SECOND:
-			add *= 1000;
-		case MILLISECOND:
-			break;
-		default:
-			throw new AssertionError();
-		}
-		return add;
-	}
-	
+    @Override
+    public Object getPreviousValue() {
+        return (duration == null ? 0 : duration) - getDiffMs();
+    }
+
+    public Field getField() {
+        return field;
+    }
+
+    public void setField(final Field field) {
+        this.field = field;
+    }
+
+    @SuppressWarnings("PMD.MissingBreakInSwitch") // Calculations actions sum up from top to down
+    private long getDiffMs() {
+        long add = 1;
+        switch (field) {
+            case DAY:
+                add *= 24;
+            case HOUR:
+                add *= 60;
+            case MINUTE:
+                add *= 60;
+            case SECOND:
+                add *= 1000;
+            case MILLISECOND:
+                break;
+            default:
+                throw new AssertionError();
+        }
+        return add;
+    }
+
+
+    public enum Field {
+        MILLISECOND("ms"), //NON-NLS
+        SECOND("s"), //NON-NLS
+        MINUTE("m"), //NON-NLS
+        HOUR("h"), //NON-NLS
+        DAY("d"); //NON-NLS
+
+        private final String unit;
+
+        Field(final String unit) {
+            this.unit = unit;
+        }
+
+        public static Field fromUnit(@NonNls final String unit) {
+            for (final Field field : Field.values()) {
+                if (field.getUnit().equals(unit)) {
+                    return field;
+                }
+            }
+            return null;
+        }
+
+        public String getUnit() {
+            return unit;
+        }
+    }
+
 }

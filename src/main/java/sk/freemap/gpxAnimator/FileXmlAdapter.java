@@ -14,27 +14,31 @@
  */
 package sk.freemap.gpxAnimator;
 
+import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.io.File;
 import java.nio.file.Path;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+@SuppressWarnings("PMD.BeanMembersShouldSerialize") // This class is not serializable
+public final class FileXmlAdapter extends XmlAdapter<String, File> {
 
-public class FileXmlAdapter extends XmlAdapter<String, File> {
+    private final Path base;
 
-	private final Path base;
-	
-	public FileXmlAdapter(final File base) {
-		this.base = base.toPath();
-	}
-	
-	@Override
-	public File unmarshal(final String string) throws Exception {
-		return base.resolve(string).toFile();
-	}
+    public FileXmlAdapter(final File base) {
+        this.base = base == null ? null : base.toPath();
+    }
 
-	@Override
-	public String marshal(final File file) throws Exception {
-		return base.relativize(file.getAbsoluteFile().toPath()).toString();
-	}
+    @Override
+    public File unmarshal(final String string) {
+        return base != null
+                ? base.resolve(string).toFile()
+                : new File(string);
+    }
+
+    @Override
+    public String marshal(final File file) {
+        return base != null
+                ? base.relativize(file.getAbsoluteFile().toPath()).toString()
+                : file.getAbsolutePath();
+    }
 
 }

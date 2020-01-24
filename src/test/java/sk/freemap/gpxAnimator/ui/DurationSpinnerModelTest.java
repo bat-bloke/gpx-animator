@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-public class DurationSpinnerModelTest {
+public final class DurationSpinnerModelTest {
 
     private static Stream<Arguments> generateGetterSetterTestData() {
         return Stream.of(
@@ -25,7 +25,7 @@ public class DurationSpinnerModelTest {
     }
 
     @ParameterizedTest
-    @MethodSource("generateGetterSetterTestData")
+    @MethodSource("generateGetterSetterTestData") //NON-NLS
     public void testValue(final Long value) {
         final DurationSpinnerModel testee = new DurationSpinnerModel();
         testee.setValue(value);
@@ -42,6 +42,6 @@ public class DurationSpinnerModelTest {
 
     @Test
     public void testFromUnit() {
-        assertEquals(DurationSpinnerModel.Field.MILLISECOND, DurationSpinnerModel.Field.fromUnit("ms"));
+        assertEquals(DurationSpinnerModel.Field.MILLISECOND, DurationSpinnerModel.Field.fromUnit("ms")); //NON-NLS
     }
 }

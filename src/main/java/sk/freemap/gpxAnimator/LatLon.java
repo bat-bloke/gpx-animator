@@ -14,30 +14,34 @@
  */
 package sk.freemap.gpxAnimator;
 
-public class LatLon {
+import java.io.Serializable;
 
-	private final double lat;
-	
-	private final double lon;
+public class LatLon implements Serializable {
 
-	private final long time;
+    private static final long serialVersionUID = 7961146252499979058L;
 
-	public LatLon(final double lat, final double lon, final long time) {
-		this.lat = lat;
-		this.lon = lon;
-		this.time = time;
-	}
-	
-	public double getLat() {
-		return lat;
-	}
-	
-	public double getLon() {
-		return lon;
-	}
-	
-	public long getTime() {
-		return time;
-	}
-	
+    private final double lat;
+
+    private final double lon;
+
+    private final long time;
+
+    public LatLon(final double lat, final double lon, final long time) {
+        this.lat = lat;
+        this.lon = lon;
+        this.time = time;
+    }
+
+    public final double getLat() {
+        return lat;
+    }
+
+    public final double getLon() {
+        return lon;
+    }
+
+    public final long getTime() {
+        return time;
+    }
+
 }

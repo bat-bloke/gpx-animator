@@ -14,12 +14,8 @@
  */
 package sk.freemap.gpxAnimator.ui;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import sk.freemap.gpxAnimator.Help;
+import sk.freemap.gpxAnimator.Preferences;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -29,89 +25,77 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
-
-import sk.freemap.gpxAnimator.Help;
-import sk.freemap.gpxAnimator.Help.OptionHelpWriter;
-import sk.freemap.gpxAnimator.Option;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ResourceBundle;
 
 public class UsageDialog extends JDialog {
 
-	private static final long serialVersionUID = -8639477664121609849L;
-	
-	private final JPanel contentPanel = new JPanel();
+    private static final long serialVersionUID = -8639477664121609849L;
 
-	/**
-	 * Create the dialog.
-	 */
-	public UsageDialog() {
-		setTitle("Usage");
-		setBounds(100, 100, 657, 535);
-		getContentPane().setLayout(new BorderLayout());
-		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
-		getContentPane().add(contentPanel, BorderLayout.CENTER);
-		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.X_AXIS));
-		{
-			final JEditorPane dtrpngpxNavigator = new JEditorPane();
-			dtrpngpxNavigator.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-			dtrpngpxNavigator.setEditable(false);
-			dtrpngpxNavigator.setContentType("text/html");
-			
-			final StringWriter sw = new StringWriter();
-			final PrintWriter pw = new PrintWriter(sw);
-			pw.println("<dl>");
-			Help.printHelp(new OptionHelpWriter() {
-				@Override
-				public void writeOptionHelp(final Option option, final String argument, final boolean track, final Object defaultValue) {
-					// TODO html escape
-					pw.print("<dt><b>--");
-					pw.print(option.getName());
-					if (argument != null) {
-						pw.print(" &lt;");
-						pw.print(argument);
-						pw.print("&gt;");
-					}
-					pw.println("</b></dt>");
-					pw.print("<dd>");
-					pw.print(option.getHelp());
-					if (track) {
-						pw.print("; can be specified multiple times if multiple tracks are provided");
-					}
-					if (defaultValue != null) {
-						pw.print("; default ");
-						pw.print(defaultValue);
-					}
-					pw.println("</dd>");
-				}
-			});
-			pw.println("</dl>");
-			pw.close();
+    /**
+     * Create the dialog.
+     */
+    public UsageDialog() {
+        final ResourceBundle resourceBundle = Preferences.getResourceBundle();
 
-			dtrpngpxNavigator.setText("Commandline parameters:" + sw.toString());
-			
-			dtrpngpxNavigator.setCaretPosition(0);
+        setTitle(resourceBundle.getString("ui.dialog.usage.title"));
+        setBounds(100, 100, 657, 535);
+        getContentPane().setLayout(new BorderLayout());
+        final JPanel contentPanel = new JPanel();
+        contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+        getContentPane().add(contentPanel, BorderLayout.CENTER);
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.LINE_AXIS));
 
-			{
-				final JScrollPane scrollPane = new JScrollPane(dtrpngpxNavigator);
-				contentPanel.add(scrollPane);
-			}
-		}
-		{
-			final JPanel buttonPane = new JPanel();
-			buttonPane.setLayout(new FlowLayout(FlowLayout.CENTER));
-			getContentPane().add(buttonPane, BorderLayout.SOUTH);
-			{
-				final JButton okButton = new JButton("OK");
-				okButton.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(final ActionEvent e) {
-						UsageDialog.this.dispose();
-					}
-				});
-				okButton.setActionCommand("OK");
-				buttonPane.add(okButton);
-				getRootPane().setDefaultButton(okButton);
-			}
-		}
-	}
+        final JEditorPane dtrpngpxNavigator = new JEditorPane();
+        dtrpngpxNavigator.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
+        dtrpngpxNavigator.setEditable(false);
+        dtrpngpxNavigator.setContentType("text/html");
+
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw);
+        pw.println("<dl>"); //NON-NLS
+        Help.printHelp((option, argument, track, defaultValue) -> {
+            // TODO html escape
+            pw.print("<dt><b>--"); //NON-NLS
+            pw.print(option.getName());
+            if (argument != null) {
+                pw.print(" &lt;"); //NON-NLS
+                pw.print(argument);
+                pw.print("&gt;"); //NON-NLS
+            }
+            pw.println("</b></dt>"); //NON-NLS
+            pw.print("<dd>"); //NON-NLS
+            pw.print(option.getHelp());
+            if (track) {
+                pw.print("; ".concat(resourceBundle.getString("ui.dialog.usage.multiple")));
+            }
+            if (defaultValue != null) {
+                pw.print("; ".concat(resourceBundle.getString("ui.dialog.usage.default")).concat(" "));
+                pw.print(defaultValue);
+            }
+            pw.println("</dd>"); //NON-NLS
+        });
+        pw.println("</dl>"); //NON-NLS
+        pw.close();
+
+        dtrpngpxNavigator.setText(resourceBundle.getString("ui.dialog.usage.cliparams").concat(sw.toString()));
+
+        dtrpngpxNavigator.setCaretPosition(0);
+
+        final JScrollPane scrollPane = new JScrollPane(dtrpngpxNavigator);
+        contentPanel.add(scrollPane);
+
+        final JPanel buttonPane = new JPanel();
+        buttonPane.setLayout(new FlowLayout(FlowLayout.CENTER));
+        getContentPane().add(buttonPane, BorderLayout.PAGE_END);
+
+        final JButton okButton = new JButton(resourceBundle.getString("ui.dialog.usage.button.ok"));
+        okButton.addActionListener(e -> UsageDialog.this.dispose());
+        buttonPane.add(okButton);
+        getRootPane().setDefaultButton(okButton);
+    }
 
 }

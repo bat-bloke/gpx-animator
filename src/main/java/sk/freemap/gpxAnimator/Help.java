@@ -15,88 +15,96 @@
 package sk.freemap.gpxAnimator;
 
 import java.io.PrintWriter;
+import java.util.ResourceBundle;
 
 
-public class Help {
+public final class Help {
 
-	public static void printHelp(final OptionHelpWriter w) {
-		final Configuration cfg;
-		final TrackConfiguration tc;
-		try {
-			cfg = Configuration.createBuilder().build();
-			tc = TrackConfiguration.createBuilder().build();
-		} catch (final UserException e) {
-			throw new RuntimeException(e); // should never happen
-		}
-		
-		w.writeOptionHelp(Option.ATTRIBUTION, "text", false, cfg.getAttribution());
-		w.writeOptionHelp(Option.BACKGROUND_MAP_VISIBILITY, "visibility", false, cfg.getBackgroundMapVisibility());
-		w.writeOptionHelp(Option.COLOR, "color", true, "some nice color :-)");
-		w.writeOptionHelp(Option.FLASHBACK_COLOR, "ARGBcolor", false, "opaque white - #ffffffff"); // TODO cfg.getFlashbackColor()
-		w.writeOptionHelp(Option.FLASHBACK_DURATION, "duration", false, cfg.getFlashbackDuration());
-		w.writeOptionHelp(Option.FONT_SIZE, "size", false, cfg.getFontSize());
-		w.writeOptionHelp(Option.FORCED_POINT_TIME_INTERVAL, "milliseconds", true, tc.getForcedPointInterval());
-		w.writeOptionHelp(Option.FPS, "fps", false, cfg.getFps());
-		w.writeOptionHelp(Option.GUI, null, false, "if no argument is specified");
-		w.writeOptionHelp(Option.HEIGHT, "height", false, cfg.getHeight());
-		w.writeOptionHelp(Option.HELP, null, false, null);
-		w.writeOptionHelp(Option.INPUT, "input", true, tc.getInputGpx());
-		w.writeOptionHelp(Option.LABEL, "label", true, tc.getLabel());
-		w.writeOptionHelp(Option.LINE_WIDTH, "width", true, tc.getLineWidth());
-		w.writeOptionHelp(Option.MARGIN, "margin", false, cfg.getMargin());
-		w.writeOptionHelp(Option.MARKER_SIZE, "size", false, cfg.getMarkerSize());
-		w.writeOptionHelp(Option.MAX_LAT, "latitude", false, cfg.getMaxLat());
-		w.writeOptionHelp(Option.MAX_LON, "longitude", false, cfg.getMaxLon());
-		w.writeOptionHelp(Option.MIN_LAT, "latitude", false, cfg.getMinLat());
-		w.writeOptionHelp(Option.MIN_LON, "longitude", false, cfg.getMinLon());
-		w.writeOptionHelp(Option.OUTPUT, "output", false, cfg.getOutput());
-		w.writeOptionHelp(Option.PHOTO_TIME, "milliseconds", false, cfg.getPhotoTime());
-		w.writeOptionHelp(Option.PHOTOS, "directory", false, cfg.getPhotos());
-		w.writeOptionHelp(Option.SKIP_IDLE, null, false, cfg.isSkipIdle());
-		w.writeOptionHelp(Option.SPEEDUP, "speedup", false, cfg.getSpeedup());
-		w.writeOptionHelp(Option.TAIL_DURATION, "time", false, cfg.getTailDuration());
-		w.writeOptionHelp(Option.TILE_CACHE_TIME_LIMIT, "seconds", false, cfg.getTileCacheTimeLimit());
-		w.writeOptionHelp(Option.TILE_CACHE_PATH, "text", false, cfg.getTileCachePath());
-		w.writeOptionHelp(Option.TIME_OFFSET, "milliseconds", true, tc.getTimeOffset());
-		w.writeOptionHelp(Option.TMS_URL_TEMPLATE, "template", false, cfg.getTmsUrlTemplate());
-		w.writeOptionHelp(Option.TOTAL_TIME, "time", false, cfg.getTotalTime());
-		w.writeOptionHelp(Option.WAYPOINT_SIZE, "size", false, cfg.getWaypointSize());
-		w.writeOptionHelp(Option.WIDTH, "width", false, "(800)"); // cfg.getWidth()
-		w.writeOptionHelp(Option.ZOOM, "zoom", false, cfg.getZoom());
-	}
-	
-	public interface OptionHelpWriter {
-		void writeOptionHelp(Option option, String argument, boolean track, Object defaultValue);
-	}
-	
-	public static class PrintWriterOptionHelpWriter implements OptionHelpWriter {
-		private final PrintWriter pw;
+    private Help() throws InstantiationException {
+        throw new InstantiationException("Help is a Utility class and can't be instantiated!");
+    }
 
-		public PrintWriterOptionHelpWriter(final PrintWriter pw) {
-			this.pw = pw;
-		}
+    @SuppressWarnings("DuplicateStringLiteralInspection")
+    public static void printHelp(final OptionHelpWriter w) {
+        final ResourceBundle resourceBundle = Preferences.getResourceBundle();
 
-		@Override
-		public void writeOptionHelp(final Option option, final String argument, final boolean track, final Object defaultValue) {
-			pw.print("--");
-			pw.print(option.getName());
-			if (argument != null) {
-				pw.print(" <");
-				pw.print(argument);
-				pw.print(">");
-			}
-			pw.println();
-			pw.print('\t');
-			pw.print(option.getHelp());
-			if (track) {
-				pw.print("; can be specified multiple times if multiple tracks are provided");
-			}
-			if (defaultValue != null) {
-				pw.print("; default ");
-				pw.print(defaultValue);
-			}
-			pw.println();
-		}
-	}
+        final Configuration cfg = Configuration.createBuilder().build();
+        final TrackConfiguration tc = TrackConfiguration.createBuilder().build();
+
+        w.writeOptionHelp(Option.ATTRIBUTION, "text", false, cfg.getAttribution()); //NON-NLS
+        w.writeOptionHelp(Option.BACKGROUND_MAP_VISIBILITY, "visibility", false, cfg.getBackgroundMapVisibility()); //NON-NLS
+        w.writeOptionHelp(Option.COLOR, "color", true, resourceBundle.getString("help.option.color.default")); //NON-NLS
+        w.writeOptionHelp(Option.FLASHBACK_COLOR, "ARGBcolor", false, "opaque white - #ffffffff"); // TODO cfg.getFlashbackColor()  NON-NLS
+        w.writeOptionHelp(Option.FLASHBACK_DURATION, "duration", false, cfg.getFlashbackDuration()); //NON-NLS
+        w.writeOptionHelp(Option.FONT_SIZE, "size", false, cfg.getFontSize()); //NON-NLS
+        w.writeOptionHelp(Option.FORCED_POINT_TIME_INTERVAL, "milliseconds", true, tc.getForcedPointInterval()); //NON-NLS
+        w.writeOptionHelp(Option.FPS, "fps", false, cfg.getFps()); //NON-NLS
+        w.writeOptionHelp(Option.GUI, null, false, resourceBundle.getString("help.option.gui.default"));
+        w.writeOptionHelp(Option.HEIGHT, "height", false, cfg.getHeight()); //NON-NLS
+        w.writeOptionHelp(Option.HELP, null, false, null);
+        w.writeOptionHelp(Option.INPUT, "input", true, tc.getInputGpx()); //NON-NLS
+        w.writeOptionHelp(Option.TRACK_ICON, "trackIcon", true, tc.getTrackIcon()); //NON-NLS
+        w.writeOptionHelp(Option.LABEL, "label", true, tc.getLabel()); //NON-NLS
+        w.writeOptionHelp(Option.LINE_WIDTH, "width", true, tc.getLineWidth()); //NON-NLS
+        w.writeOptionHelp(Option.MARGIN, "margin", false, cfg.getMargin()); //NON-NLS
+        w.writeOptionHelp(Option.MARKER_SIZE, "size", false, cfg.getMarkerSize()); //NON-NLS
+        w.writeOptionHelp(Option.MAX_LAT, "latitude", false, cfg.getMaxLat()); //NON-NLS
+        w.writeOptionHelp(Option.MAX_LON, "longitude", false, cfg.getMaxLon()); //NON-NLS
+        w.writeOptionHelp(Option.MIN_LAT, "latitude", false, cfg.getMinLat()); //NON-NLS
+        w.writeOptionHelp(Option.MIN_LON, "longitude", false, cfg.getMinLon()); //NON-NLS
+        w.writeOptionHelp(Option.OUTPUT, "output", false, cfg.getOutput()); //NON-NLS
+        w.writeOptionHelp(Option.PHOTO_TIME, "milliseconds", false, cfg.getPhotoTime()); //NON-NLS
+        w.writeOptionHelp(Option.PHOTO_DIR, "directory", false, cfg.getPhotoDirectory()); //NON-NLS
+        w.writeOptionHelp(Option.SKIP_IDLE, null, false, cfg.isSkipIdle());
+        w.writeOptionHelp(Option.SPEEDUP, "speedup", false, cfg.getSpeedup()); //NON-NLS
+        w.writeOptionHelp(Option.TAIL_DURATION, "time", false, cfg.getTailDuration()); //NON-NLS
+        w.writeOptionHelp(Option.TAIL_COLOR, "tail-color", false, cfg.getTailColor()); //NON-NLS
+        w.writeOptionHelp(Option.TIME_OFFSET, "milliseconds", true, tc.getTimeOffset()); //NON-NLS
+        w.writeOptionHelp(Option.TMS_URL_TEMPLATE, "template", false, cfg.getTmsUrlTemplate()); //NON-NLS
+        w.writeOptionHelp(Option.TOTAL_TIME, "time", false, cfg.getTotalTime()); //NON-NLS
+        w.writeOptionHelp(Option.WAYPOINT_SIZE, "size", false, cfg.getWaypointSize()); //NON-NLS
+        w.writeOptionHelp(Option.WIDTH, "width", false, "(800)"); // TODO cfg.getWidth() NON-NLS
+        w.writeOptionHelp(Option.ZOOM, "zoom", false, cfg.getZoom()); //NON-NLS
+    }
+
+    public interface OptionHelpWriter {
+        void writeOptionHelp(Option option, String argument, boolean track, Object defaultValue);
+    }
+
+    @SuppressWarnings("PMD.BeanMembersShouldSerialize") // This class is not serializable
+    public static final class PrintWriterOptionHelpWriter implements OptionHelpWriter {
+        private final PrintWriter pw;
+
+        public PrintWriterOptionHelpWriter(final PrintWriter pw) {
+            this.pw = pw;
+        }
+
+        @Override
+        public void writeOptionHelp(final Option option, final String argument, final boolean track, final Object defaultValue) {
+            final ResourceBundle resourceBundle = Preferences.getResourceBundle();
+
+            pw.print("--");
+            pw.print(option.getName());
+            if (argument != null) {
+                pw.print(" <");
+                pw.print(argument);
+                pw.print(">");
+            }
+            pw.println();
+            //noinspection MagicCharacter
+            pw.print('\t');
+            pw.print(option.getHelp());
+            if (track) {
+                pw.print("; ");
+                pw.print(resourceBundle.getString("help.options.multiple"));
+            }
+            if (defaultValue != null) {
+                pw.print("; ");
+                pw.print(resourceBundle.getString("help.options.default"));
+                pw.print(defaultValue);
+            }
+            pw.println();
+        }
+    }
 
 }

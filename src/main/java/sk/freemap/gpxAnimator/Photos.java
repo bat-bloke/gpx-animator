@@ -19,6 +19,9 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import org.imgscalr.Scalr;
+import org.jetbrains.annotations.NonNls;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sk.freemap.gpxAnimator.frameWriter.FrameWriter;
 
 import javax.imageio.ImageIO;
@@ -35,87 +38,78 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
 
-public class Photos {
+@SuppressWarnings("PMD.BeanMembersShouldSerialize") // This class is not serializable
+public final class Photos {
+
+    @NonNls
+    private static final Logger LOGGER = LoggerFactory.getLogger(Photos.class);
 
     private static final String SYSTEM_ZONE_OFFSET;
 
     static {
         final ZonedDateTime dateTime = ZonedDateTime.now();
-        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("x");
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("x"); //NON-NLS
         SYSTEM_ZONE_OFFSET = dateTime.format(formatter);
     }
 
-    private final Map<Long, List<Photo>> photos;
+    private final ResourceBundle resourceBundle = Preferences.getResourceBundle();
 
-    public Photos(final File directory) {
-        if (directory == null) {
-            photos = new HashMap<>();
+    private final Map<Long, List<Photo>> allPhotos;
+
+    public Photos(final String dirname) {
+        if (dirname == null || dirname.isBlank()) {
+            allPhotos = new HashMap<>();
         } else {
+            final File directory = new File(dirname);
             if (directory.isDirectory()) {
                 final File[] files = directory.listFiles((dir, name) -> {
-                    final String lowerCaseName = name.toLowerCase();
-                    return lowerCaseName.endsWith(".jpg") || lowerCaseName.endsWith(".jpeg") || lowerCaseName.endsWith(".png");
+                    final String lowerCaseName = name.toLowerCase(Locale.getDefault());
+                    return lowerCaseName.endsWith(".jpg") || lowerCaseName.endsWith(".jpeg") || lowerCaseName.endsWith(".png"); //NON-NLS
                 });
                 if (files != null) {
-                    photos = Arrays.stream(files).map(Photos::toPhoto).filter(photo -> photo.getEpochSeconds() > 0)
+                    allPhotos = Arrays.stream(files).map(this::toPhoto).filter(photo -> photo.getEpochSeconds() > 0)
                             .collect(groupingBy(Photo::getEpochSeconds));
                 } else {
-                    photos = new HashMap<>();
+                    allPhotos = new HashMap<>();
                 }
             } else {
-                if (!directory.getAbsolutePath().isEmpty()) {
-                    System.err.println(String.format("'%s' is not a directory!", directory));
-                }
-                photos = new HashMap<>();
+                LOGGER.error("'{}' is not a directory!", directory);
+                allPhotos = new HashMap<>();
             }
         }
     }
 
-    private static Photo toPhoto(final File file) {
+    private Photo toPhoto(final File file) {
         return new Photo(timeOfPhotoInMilliSeconds(file), file);
     }
 
-    private static Long timeOfPhotoInMilliSeconds(final File file) {
+    private Long timeOfPhotoInMilliSeconds(final File file) {
         try {
             final Metadata metadata = ImageMetadataReader.readMetadata(file);
             final ExifSubIFDDirectory directory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
             final String zoneOffset = directory.getString(36881) != null ? directory.getString(36881) : SYSTEM_ZONE_OFFSET;
             final String dateTimeString = directory.getString(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)
-                    + " " + zoneOffset.replace(":", "");
+                    .concat(" ").concat(zoneOffset.replace(":", ""));
             final ZonedDateTime zonedDateTime = ZonedDateTime.parse(dateTimeString,
-                    DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss x"));
+                    DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss x")); //NON-NLS
             return zonedDateTime.toEpochSecond() * 1_000;
-        } catch (ImageProcessingException | IOException | NullPointerException e) {
-            System.err.println(String.format("Error processing file '%s': %s",
-                    file.getAbsolutePath(), e.getMessage()));
+        } catch (ImageProcessingException | IOException | NullPointerException e) { // NOPMD -- NPEs can happen quite often in image metadata handling
+            LOGGER.error("Error processing file '{}}'!", file.getAbsoluteFile(), e);
             return 0L;
         }
     }
 
-    public void render(final Long gpsTime, final Configuration cfg, final BufferedImage bi,
-                       final FrameWriter frameWriter, final RenderingContext rc, final int pct) {
-        System.out.println("GPS time: " + gpsTime);
-        final List<Long> keys = photos.keySet().stream()
-                .filter(photoTime -> gpsTime >= photoTime)
-                .collect(Collectors.toList());
-        if (!keys.isEmpty()) {
-            keys.stream()
-                    .map(photos::get)
-                    .flatMap(List::stream).collect(Collectors.toList())
-                    .forEach(photo -> Photos.renderPhoto(photo, cfg, bi, frameWriter, rc, pct));
-            keys.forEach(photos::remove);
-        }
-    }
-
-    private static void renderPhoto(final Photo photo, final Configuration cfg,
+    private void renderPhoto(final Photo photo, final Configuration cfg,
                                     final BufferedImage bi, final FrameWriter frameWriter,
                                     final RenderingContext rc, final int pct) {
-        rc.setProgress1(pct, String.format("Rendering photo '%s'", photo.getFile().getName()));
+        rc.setProgress1(pct, String.format(resourceBundle.getString("photos.progress.rendering"), photo.getFile().getName()));
 
         final BufferedImage image = readPhoto(photo, bi.getWidth(), bi.getHeight());
         if (image != null) {
@@ -126,7 +120,7 @@ public class Photos {
             g2d.drawImage(image, posX, posY, null);
             g2d.dispose();
 
-            final long ms = cfg.getPhotoTime().longValue();
+            final long ms = cfg.getPhotoTime();
             final long fps = Double.valueOf(cfg.getFps()).longValue();
             final long frames = ms * fps / 1_000;
 
@@ -135,31 +129,32 @@ public class Photos {
                     frameWriter.addFrame(bi2);
                 }
             } catch (final UserException e) {
-                System.err.println(String.format("Problem rendering photo '%s': %s", photo, e.getMessage() ));
+                LOGGER.error("Problems rendering photo '{}'!", photo, e);
             }
         }
     }
 
-    private static BufferedImage readPhoto(final Photo photo, final int width, final int height) {
+    private BufferedImage readPhoto(final Photo photo, final int width, final int height) {
         try {
             final byte[] rawData = getRawBytesFromFile(photo.getFile());
-            final ImageInputStream input = ImageIO.createImageInputStream(new ByteArrayInputStream(rawData));
-            final BufferedImage image = ImageIO.read(input);
-            final int scaledWidth = Math.round(width * 0.7f);
-            final int scaledHeight = Math.round(height * 0.7f);
-            final BufferedImage scaledImage = scaleImage(image, scaledWidth, scaledHeight);
-            return addBorder(scaledImage);
+            try (ImageInputStream input = ImageIO.createImageInputStream(new ByteArrayInputStream(rawData))) {
+                final BufferedImage image = ImageIO.read(input);
+                final int scaledWidth = Math.round(width * 0.7f);
+                final int scaledHeight = Math.round(height * 0.7f);
+                final BufferedImage scaledImage = scaleImage(image, scaledWidth, scaledHeight);
+                return addBorder(scaledImage);
+            }
         } catch (final IOException e) {
-            System.err.println(String.format("Problem reading photo '%s': %s", photo, e.getMessage() ));
+            LOGGER.error("Problems reading photo '{}'!", photo, e);
         }
         return null;
     }
 
     private static BufferedImage addBorder(final BufferedImage image) {
-        int borderWidth = Math.round(image.getWidth() / 15);
-        int borderHeight = Math.round(image.getHeight() / 15);
-        int borderSize = borderWidth < borderHeight ? borderWidth : borderHeight;
-        int outerBorderSize = Math.round(borderSize / 5);
+        int borderWidth = image.getWidth() / 15;
+        int borderHeight = image.getHeight() / 15;
+        int borderSize = Math.min(borderWidth, borderHeight);
+        int outerBorderSize = borderSize / 5;
         final BufferedImage border = new BufferedImage(
                 image.getWidth() + 2 * borderSize,
                 image.getHeight() + 2 * borderSize,
@@ -184,11 +179,25 @@ public class Photos {
     }
 
     private static byte[] getRawBytesFromFile(final File file) throws IOException {
-        final byte[] image = new byte[(int)file.length()];
-        try (final FileInputStream fileInputStream = new FileInputStream(file)) {
+        final byte[] image = new byte[(int) file.length()];
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
             //noinspection ResultOfMethodCallIgnored
             fileInputStream.read(image);
         }
         return image;
+    }
+
+    public void render(final Long gpsTime, final Configuration cfg, final BufferedImage bi,
+                       final FrameWriter frameWriter, final RenderingContext rc, final int pct) {
+        final List<Long> keys = allPhotos.keySet().stream()
+                .filter(photoTime -> gpsTime >= photoTime)
+                .collect(Collectors.toList());
+        if (!keys.isEmpty()) {
+            keys.stream()
+                    .map(allPhotos::get)
+                    .flatMap(List::stream).collect(Collectors.toList())
+                    .forEach(photo -> renderPhoto(photo, cfg, bi, frameWriter, rc, pct));
+            keys.forEach(allPhotos::remove);
+        }
     }
 }
